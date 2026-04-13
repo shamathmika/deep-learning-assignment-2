@@ -3,72 +3,72 @@
     {
       "model": "yolov8s",
       "backend": "pytorch-cpu",
-      "avg_latency_ms": 36.49,
-      "map50": 0.516,
-      "map50_95": 0.3884
+      "avg_latency_ms": null,
+      "map50": null,
+      "map50_95": null
     },
     {
       "model": "yolov8s",
       "backend": "pytorch",
-      "avg_latency_ms": 18.32,
-      "map50": 0.516,
-      "map50_95": 0.3884
+      "avg_latency_ms": null,
+      "map50": null,
+      "map50_95": null
     },
     {
       "model": "yolov8s",
       "backend": "torchscript",
-      "avg_latency_ms": 46.16,
-      "map50": 0.5162,
-      "map50_95": 0.386
+      "avg_latency_ms": null,
+      "map50": null,
+      "map50_95": null
     },
     {
       "model": "yolov8s",
       "backend": "openvino",
-      "avg_latency_ms": 19.73,
-      "map50": 0.5162,
-      "map50_95": 0.3832
+      "avg_latency_ms": null,
+      "map50": null,
+      "map50_95": null
     },
     {
       "model": "yolov8s",
       "backend": "coreml",
-      "avg_latency_ms": 8.35,
-      "map50": 0.5107,
-      "map50_95": 0.3804
+      "avg_latency_ms": null,
+      "map50": null,
+      "map50_95": null
     },
     {
       "model": "rtdetr-l",
       "backend": "pytorch-cpu",
-      "avg_latency_ms": 352.59,
-      "map50": 0.6563,
-      "map50_95": 0.4897
+      "avg_latency_ms": null,
+      "map50": null,
+      "map50_95": null
     },
     {
       "model": "rtdetr-l",
       "backend": "pytorch",
-      "avg_latency_ms": 31.08,
-      "map50": 0.6563,
-      "map50_95": 0.4897
+      "avg_latency_ms": null,
+      "map50": null,
+      "map50_95": null
     },
     {
       "model": "rtdetr-l",
       "backend": "torchscript",
-      "avg_latency_ms": 401.2,
-      "map50": 0.0,
-      "map50_95": 0.0
+      "avg_latency_ms": null,
+      "map50": null,
+      "map50_95": null
     },
     {
       "model": "rtdetr-l",
       "backend": "openvino",
-      "avg_latency_ms": 70.89,
-      "map50": 0.0,
-      "map50_95": 0.0
+      "avg_latency_ms": null,
+      "map50": null,
+      "map50_95": null
     },
     {
       "model": "rtdetr-l",
       "backend": "coreml",
-      "avg_latency_ms": 76.49,
-      "map50": 0.5694,
-      "map50_95": 0.3985
+      "avg_latency_ms": null,
+      "map50": null,
+      "map50_95": null
     }
   ]
 }
