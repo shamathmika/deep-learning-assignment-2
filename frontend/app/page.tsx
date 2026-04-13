@@ -64,18 +64,7 @@ const BACKEND_LABELS: Record<string, string> = {
 
 const BACKEND_ORDER = ['pytorch-cpu', 'pytorch', 'torchscript', 'openvino', 'coreml']
 
-const ALL_COMBOS = [
-  { model: 'yolov8s',  backend: 'pytorch-cpu' },
-  { model: 'yolov8s',  backend: 'pytorch'     },
-  { model: 'yolov8s',  backend: 'torchscript' },
-  { model: 'yolov8s',  backend: 'openvino'    },
-  { model: 'yolov8s',  backend: 'coreml'      },
-  { model: 'rtdetr-l', backend: 'pytorch-cpu' },
-  { model: 'rtdetr-l', backend: 'pytorch'     },
-  { model: 'rtdetr-l', backend: 'torchscript' },
-  { model: 'rtdetr-l', backend: 'openvino'    },
-  { model: 'rtdetr-l', backend: 'coreml'      },
-]
+// Derived dynamically from /models API response — see buildCombos() in BenchmarkPanel
 
 export default function Page() {
   const [pageView,       setPageView]       = useState<PageView>('detection')
@@ -313,6 +302,7 @@ export default function Page() {
         <BenchmarkPanel
           entries={benchmarkEntries}
           onEntriesChange={setBenchmarkEntries}
+          modelBackends={modelBackends}
         />
       ) : (
         <div className="flex flex-1 overflow-hidden">
@@ -670,10 +660,22 @@ function VideoDetectionPlayer({
 function BenchmarkPanel({
   entries,
   onEntriesChange,
+  modelBackends,
 }: {
   entries:         BenchmarkEntry[]
   onEntriesChange: (e: BenchmarkEntry[]) => void
+  modelBackends:   Record<string, string[]>
 }) {
+  // Build ordered combos dynamically from whatever backends the server reports
+  const allCombos = useMemo(() =>
+    Object.keys(modelBackends).flatMap(model =>
+      BACKEND_ORDER
+        .filter(b => modelBackends[model].includes(b))
+        .map(b => ({ model, backend: b }))
+    ),
+    [modelBackends]
+  )
+  const models = useMemo(() => Object.keys(modelBackends), [modelBackends])
   const [benchFile,    setBenchFile]    = useState<File | null>(null)
   const [running,      setRunning]      = useState(false)
   const [progress,     setProgress]     = useState('')
@@ -728,8 +730,8 @@ function BenchmarkPanel({
 
     const updated: BenchmarkEntry[] = live.map(e => ({ ...e }))
 
-    for (let i = 0; i < ALL_COMBOS.length; i++) {
-      const { model, backend } = ALL_COMBOS[i]
+    for (let i = 0; i < allCombos.length; i++) {
+      const { model, backend } = allCombos[i]
       setProgress(`${model} / ${BACKEND_LABELS[backend] ?? backend}`)
 
       try {
@@ -774,8 +776,6 @@ function BenchmarkPanel({
     setProgress('')
   }
 
-  const models = ['yolov8s', 'rtdetr-l']
-
   const cpuBaseline: Record<string, number> = {}
   for (const e of live) {
     if (e.backend === 'pytorch-cpu' && e.avg_latency_ms !== null) {
@@ -819,7 +819,7 @@ function BenchmarkPanel({
 
           {running && (
             <div className="flex items-center gap-3 text-sm text-white/70">
-              <span className="font-mono">{doneCount}/{ALL_COMBOS.length}</span>
+              <span className="font-mono">{doneCount}/{allCombos.length}</span>
               <span className="text-white/55">{progress}</span>
             </div>
           )}
@@ -897,10 +897,6 @@ function BenchmarkPanel({
           )
         })}
 
-        <p className="text-white/50 text-xs">
-          mAP columns populate after running{' '}
-          <span className="font-mono text-white/70">python scripts/run_map_eval.py</span>
-        </p>
       </div>
     </div>
   )

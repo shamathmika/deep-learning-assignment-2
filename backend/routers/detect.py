@@ -6,20 +6,11 @@ import cv2
 from fastapi import APIRouter, File, UploadFile, Query, HTTPException
 from fastapi.responses import JSONResponse
 
+from backend.constants import DEVICE_MAP
 from backend.models.loader import get_model
 from backend.models.onnx_coreml import OnnxCoreMLModel
 
 router = APIRouter()
-
-# TorchScript and OpenVINO models run on CPU.
-# MPS (Apple Metal) is only used for PyTorch eager mode.
-DEVICE_MAP = {
-    "pytorch":     "mps",
-    "pytorch-cpu": "cpu",
-    "torchscript": "cpu",
-    "openvino":    "cpu",
-    "coreml":      "cpu",
-}
 
 
 def run_timed_inference(model, image_path: str, device: str) -> tuple[list, float]:

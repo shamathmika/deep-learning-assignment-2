@@ -4,60 +4,31 @@ mAP evaluation against a COCO-format ground truth annotation file.
 Workflow:
   1. Annotate frames in Label Studio (export as COCO JSON).
   2. Place the exported JSON at  data/annotations/instances.json
-     and the corresponding images in  data/annotations/images/
+     (images are read from  data/annotation_frames/)
   3. Run:  python scripts/run_map_eval.py
   4. Results are written to  data/benchmark_results.json
      (latency fields are preserved; only mAP fields are updated).
 """
 
 import json
+import re
+import sys
 import time
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))  # make backend importable when run as a script
+
+from backend.constants import MODEL_BACKEND_PAIRS  # noqa: E402
 
 import requests
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
-ROOT            = Path(__file__).resolve().parent.parent
-ANNOTATIONS     = ROOT / "data" / "annotations" / "instances.json"
-IMAGES_DIR      = ROOT / "data" / "annotation_frames"
-BENCHMARK_FILE  = ROOT / "data" / "benchmark_results.json"
-BACKEND_URL     = "http://localhost:8000"
-
-# COCO category name to ID mapping (80-class COCO 2017)
-COCO_NAME_TO_ID = {
-    "person": 1, "bicycle": 2, "car": 3, "motorcycle": 4, "airplane": 5,
-    "bus": 6, "train": 7, "truck": 8, "boat": 9, "traffic light": 10,
-    "fire hydrant": 11, "stop sign": 13, "parking meter": 14, "bench": 15,
-    "bird": 16, "cat": 17, "dog": 18, "horse": 19, "sheep": 20, "cow": 21,
-    "elephant": 22, "bear": 23, "zebra": 24, "giraffe": 25, "backpack": 27,
-    "umbrella": 28, "handbag": 31, "tie": 32, "suitcase": 33, "frisbee": 34,
-    "skis": 35, "snowboard": 36, "sports ball": 37, "kite": 38,
-    "baseball bat": 39, "baseball glove": 40, "skateboard": 41,
-    "surfboard": 42, "tennis racket": 43, "bottle": 44, "wine glass": 46,
-    "cup": 47, "fork": 48, "knife": 49, "spoon": 50, "bowl": 51,
-    "banana": 52, "apple": 53, "sandwich": 54, "orange": 55, "broccoli": 56,
-    "carrot": 57, "hot dog": 58, "pizza": 59, "donut": 60, "cake": 61,
-    "chair": 62, "couch": 63, "potted plant": 64, "bed": 65,
-    "dining table": 67, "toilet": 70, "tv": 72, "laptop": 73, "mouse": 74,
-    "remote": 75, "keyboard": 76, "cell phone": 77, "microwave": 78,
-    "oven": 79, "toaster": 80, "sink": 81, "refrigerator": 82, "book": 84,
-    "clock": 85, "vase": 86, "scissors": 87, "teddy bear": 88,
-    "hair drier": 89, "toothbrush": 90,
-}
-
-MODELS_BACKENDS = [
-    ("yolov8s",  "pytorch-cpu"),
-    ("yolov8s",  "pytorch"),
-    ("yolov8s",  "torchscript"),
-    ("yolov8s",  "openvino"),
-    ("yolov8s",  "coreml"),
-    ("rtdetr-l", "pytorch-cpu"),
-    ("rtdetr-l", "pytorch"),
-    ("rtdetr-l", "torchscript"),
-    ("rtdetr-l", "openvino"),
-    ("rtdetr-l", "coreml"),
-]
+ANNOTATIONS    = ROOT / "data" / "annotations" / "instances.json"
+IMAGES_DIR     = ROOT / "data" / "annotation_frames"
+BENCHMARK_FILE = ROOT / "data" / "benchmark_results.json"
+BACKEND_URL    = "http://localhost:8000"
 
 
 def run_inference(image_path: Path, model_name: str, backend: str) -> list[dict]:
@@ -72,16 +43,34 @@ def run_inference(image_path: Path, model_name: str, backend: str) -> list[dict]
     return resp.json()["detections"]
 
 
+def _resolve_image(exported_name: str) -> Path | None:
+    """
+    Label Studio prefixes uploaded filenames with a hash (e.g. 'a1b2c3d4-frame_00000.jpg')
+    and may export the full absolute path. Extract the frame index and match against
+    the actual files in IMAGES_DIR.
+    """
+    basename = Path(exported_name).name  # strip any leading path
+    m = re.search(r'frame[_\s]?(\d+)', basename, re.IGNORECASE)
+    if not m:
+        return None
+    frame_idx = int(m.group(1))
+    matches = list(IMAGES_DIR.glob(f"*{frame_idx:05d}*"))
+    return matches[0] if matches else None
+
+
 def evaluate(model_name: str, backend: str, coco_gt: COCO) -> dict:
-    image_ids = coco_gt.getImgIds()
+    # Build name→id from the annotation file itself — Label Studio uses its own IDs
+    name_to_id = {cat["name"]: cat["id"] for cat in coco_gt.dataset["categories"]}
+
+    image_ids  = coco_gt.getImgIds()
     dt_results = []
 
     for img_id in image_ids:
-        img_info  = coco_gt.loadImgs(img_id)[0]
-        img_path  = IMAGES_DIR / img_info["file_name"]
+        img_info = coco_gt.loadImgs(img_id)[0]
+        img_path = _resolve_image(img_info["file_name"])
 
-        if not img_path.exists():
-            print(f"  [skip] image not found: {img_path.name}")
+        if img_path is None or not img_path.exists():
+            print(f"  [skip] image not found: {img_info['file_name']}")
             continue
 
         try:
@@ -91,14 +80,14 @@ def evaluate(model_name: str, backend: str, coco_gt: COCO) -> dict:
             continue
 
         for det in detections:
-            cat_id = COCO_NAME_TO_ID.get(det["class"])
+            cat_id = name_to_id.get(det["class"])
             if cat_id is None:
                 continue
             x1, y1, x2, y2 = det["box"]
             dt_results.append({
                 "image_id":    img_id,
                 "category_id": cat_id,
-                "bbox":        [x1, y1, x2 - x1, y2 - y1],  # COCO expects x,y,w,h
+                "bbox":        [x1, y1, x2 - x1, y2 - y1],  # COCO: x,y,w,h
                 "score":       det["confidence"],
             })
 
@@ -141,7 +130,7 @@ def main() -> None:
 
     existing = {(e["model"], e["backend"]): e for e in load_benchmark()}
 
-    for model_name, backend in MODELS_BACKENDS:
+    for model_name, backend in MODEL_BACKEND_PAIRS:
         print(f"\n{'='*50}")
         print(f"Evaluating  {model_name} / {backend}")
         t0 = time.perf_counter()

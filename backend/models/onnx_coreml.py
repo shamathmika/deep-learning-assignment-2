@@ -72,8 +72,12 @@ class OnnxCoreMLModel:
 
         # CoreMLExecutionProvider is listed first so ORT uses it where possible.
         # Ops not supported by CoreML fall back to CPU automatically.
+        # Suppress the partition-count warnings emitted by the CoreML EP.
+        so = ort.SessionOptions()
+        so.log_severity_level = 3  # 0=VERBOSE 1=INFO 2=WARNING 3=ERROR
         self.session = ort.InferenceSession(
             onnx_path,
+            sess_options=so,
             providers=["CoreMLExecutionProvider", "CPUExecutionProvider"],
         )
 
