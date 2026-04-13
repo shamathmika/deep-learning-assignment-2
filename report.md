@@ -1,5 +1,5 @@
 # CMPE 258 Homework 2: Inference Optimization
-Shamathmika | San Jose State University | Spring 2026
+FNU Shamathmika | 018326464
 
 ## 1. Overview
 
@@ -37,7 +37,24 @@ No CUDA or NVIDIA hardware is available. All acceleration is CPU or Apple Neural
 
 **ONNX + CoreML EP:** The model is exported to ONNX. At runtime, ONNX Runtime partitions the graph so that ops supported by CoreML run on the Apple Neural Engine (ANE) and the rest fall back to CPU. This is the only backend that uses the ANE. Custom pre/postprocessing handles the letterbox convention and output format differences between YOLOv8 and RT-DETR.
 
-## 5. Results
+## 5. Steps Done
+
+1. Set up FastAPI backend with Uvicorn and a Next.js frontend.
+2. Downloaded YOLOv8s and RT-DETR-L weights via Ultralytics.
+3. Exported both models to TorchScript, OpenVINO IR, and ONNX formats using `scripts/export_models.py`.
+4. Implemented the ONNX + CoreML EP backend with custom letterbox preprocessing and separate postprocessing branches for YOLOv8 (transposed anchor grid) and RT-DETR (normalized center-format boxes).
+5. Built the detection endpoints (`/detect/image`, `/detect/video`) and a benchmark endpoint that stores latency and mAP results.
+6. Built the frontend with a video detection player (canvas overlay synced to playback), image detection view, and a benchmark dashboard with live latency measurement.
+7. Ran latency benchmarks across all 10 model/backend combinations using the Run All button in the dashboard.
+8. Recorded a street scene video with an iPhone and extracted 30 evenly-spaced frames using `scripts/extract_frames.py`.
+9. Annotated all 30 frames in Label Studio with bounding boxes across 13 object classes (car, truck, person, traffic light, train, fire hydrant, bus, umbrella, dog, parking meter, motorcycle, stop sign, potted plant). Screenshot of the annotation interface below.
+
+![Label Studio annotation](data/assignment_screenshots/label-studio-annotation.png)
+
+10. Exported annotations as COCO JSON and placed at `data/annotations/instances.json`.
+11. Ran mAP evaluation via `scripts/run_map_eval.py`, which calls the detection API for each frame and model/backend combo and computes mAP@50 and mAP@50:95 using pycocotools COCOeval.
+
+## 6. Results
 
 Latency is single-image inference time in milliseconds, averaged over a warm run (one warmup pass excluded). Speedup is relative to PyTorch CPU per model.
 
@@ -63,7 +80,7 @@ Latency is single-image inference time in milliseconds, averaged over a warm run
 
 mAP was evaluated on 29 annotated frames from a real-world street scene video using pycocotools COCOeval.
 
-## 6. Analysis
+## 7. Analysis
 
 ### Latency
 
@@ -87,7 +104,7 @@ ONNX + CoreML EP scores 0.60 mAP@50. Custom postprocessing was written to handle
 
 RT-DETR-L outperforms YOLOv8s at baseline (0.70 vs 0.50 mAP@50) but at 352ms vs 36ms on CPU. With MPS acceleration RT-DETR-L becomes practical at 31ms while keeping its accuracy advantage. On CPU-only hardware YOLOv8s is the better choice.
 
-## 7. Key Findings
+## 8. Key Findings
 
 1. CoreML EP is fastest for YOLOv8s at 8.3ms (4.37x) using the Apple Neural Engine.
 2. MPS is most effective for RT-DETR-L at 31.1ms (11.34x) via GPU attention.
@@ -96,27 +113,10 @@ RT-DETR-L outperforms YOLOv8s at baseline (0.70 vs 0.50 mAP@50) but at 352ms vs 
 5. All backends preserve YOLOv8s accuracy. No accuracy cost for accelerating the CNN model.
 6. ONNX RT-DETR requires custom postprocessing. The exported tensor layout differs from Ultralytics eager output and needs manual letterbox reversal.
 
-## 8. Steps Done
-
-1. Set up FastAPI backend with Uvicorn and a Next.js frontend.
-2. Downloaded YOLOv8s and RT-DETR-L weights via Ultralytics.
-3. Exported both models to TorchScript, OpenVINO IR, and ONNX formats using `scripts/export_models.py`.
-4. Implemented the ONNX + CoreML EP backend with custom letterbox preprocessing and separate postprocessing branches for YOLOv8 (transposed anchor grid) and RT-DETR (normalized center-format boxes).
-5. Built the detection endpoints (`/detect/image`, `/detect/video`) and a benchmark endpoint that stores latency and mAP results.
-6. Built the frontend with a video detection player (canvas overlay synced to playback), image detection view, and a benchmark dashboard with live latency measurement.
-7. Ran latency benchmarks across all 10 model/backend combinations using the Run All button in the dashboard.
-8. Recorded a street scene video with an iPhone and extracted 30 evenly-spaced frames using `scripts/extract_frames.py`.
-9. Annotated all 30 frames in Label Studio with bounding boxes across 13 object classes (car, truck, person, traffic light, train, fire hydrant, bus, umbrella, dog, parking meter, motorcycle, stop sign, potted plant). Screenshot of the annotation interface below.
-
-![Label Studio annotation](data/assignment_screenshots/label-studio-annotation.png)
-
-10. Exported annotations as COCO JSON and placed at `data/annotations/instances.json`.
-11. Ran mAP evaluation via `scripts/run_map_eval.py`, which calls the detection API for each frame and model/backend combo and computes mAP@50 and mAP@50:95 using pycocotools COCOeval.
-
 ## 9. Acceleration Methods Summary
 
-| Method | Type | Status |
-|---|---|---|
-| TorchScript | Required | Implemented. Latency regression on both models; export issue causes zero mAP on RT-DETR |
-| OpenVINO | Required | Implemented. 1.85x speedup on YOLOv8s, 4.97x on RT-DETR. Same export issue on RT-DETR accuracy |
-| ONNX + CoreML EP | Bonus | Implemented. Fastest for YOLOv8s. Custom postprocessing recovers RT-DETR accuracy |
+| Method | Status |
+|---|---|
+| TorchScript | Latency regression on both models; export issue causes zero mAP on RT-DETR |
+| OpenVINO | 1.85x speedup on YOLOv8s, 4.97x on RT-DETR. Same export issue on RT-DETR accuracy |
+| ONNX + CoreML EP | Fastest for YOLOv8s. Custom postprocessing recovers RT-DETR accuracy |
