@@ -1,0 +1,14 @@
+{
+  "entries": [
+    { "model": "yolov8s",  "backend": "pytorch-cpu", "avg_latency_ms": 38.5,  "map50": null, "map50_95": null },
+    { "model": "yolov8s",  "backend": "pytorch",     "avg_latency_ms": 13.3,  "map50": null, "map50_95": null },
+    { "model": "yolov8s",  "backend": "torchscript", "avg_latency_ms": 49.2,  "map50": null, "map50_95": null },
+    { "model": "yolov8s",  "backend": "openvino",    "avg_latency_ms": 21.4,  "map50": null, "map50_95": null },
+    { "model": "yolov8s",  "backend": "coreml",      "avg_latency_ms": 8.9,   "map50": null, "map50_95": null },
+    { "model": "rtdetr-l", "backend": "pytorch-cpu", "avg_latency_ms": 351.9, "map50": null, "map50_95": null },
+    { "model": "rtdetr-l", "backend": "pytorch",     "avg_latency_ms": 31.3,  "map50": null, "map50_95": null },
+    { "model": "rtdetr-l", "backend": "torchscript", "avg_latency_ms": 391.3, "map50": null, "map50_95": null },
+    { "model": "rtdetr-l", "backend": "openvino",    "avg_latency_ms": 72.8,  "map50": null, "map50_95": null },
+    { "model": "rtdetr-l", "backend": "coreml",      "avg_latency_ms": 77.6,  "map50": null, "map50_95": null }
+  ]
+}
