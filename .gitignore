@@ -16,9 +16,10 @@ build/
 *.xml
 *.bin
 
-# Data
-data/raw_frames/
-data/annotations/
+# Data — ignore generated/large files, track sample images and annotation frames
+data/annotations/instances.json
+data/*.mp4
+data/*.mov
 
 # Environment
 .env

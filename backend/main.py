@@ -1,8 +1,9 @@
 import json
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from backend.routers.detect import router as detect_router
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -44,3 +45,52 @@ def get_benchmark():
     if not BENCHMARK_FILE.exists():
         return {"entries": []}
     return json.loads(BENCHMARK_FILE.read_text())
+
+
+@app.post("/eval/run", tags=["System"])
+async def run_eval():
+    import asyncio
+    import sys
+    script = ROOT / "scripts" / "run_map_eval.py"
+    if not (ROOT / "data" / "annotations" / "instances.json").exists():
+        return JSONResponse({"error": "Annotation file not found at data/annotations/instances.json"}, status_code=400)
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, str(script),
+            cwd=str(ROOT),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            return JSONResponse({"error": stderr.decode()}, status_code=500)
+        if BENCHMARK_FILE.exists():
+            return json.loads(BENCHMARK_FILE.read_text())
+        return {"entries": []}
+    except Exception as exc:
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
+@app.post("/benchmark", tags=["System"])
+async def update_benchmark(request: Request):
+    new_data = await request.json()
+
+    # Preserve existing mAP fields — only latency is overwritten by the frontend run
+    existing_map: dict[tuple[str, str], dict] = {}
+    if BENCHMARK_FILE.exists():
+        for entry in json.loads(BENCHMARK_FILE.read_text()).get("entries", []):
+            existing_map[(entry["model"], entry["backend"])] = entry
+
+    merged = []
+    for entry in new_data.get("entries", []):
+        key = (entry["model"], entry["backend"])
+        prev = existing_map.get(key, {})
+        merged.append({
+            **entry,
+            "map50":    prev.get("map50"),
+            "map50_95": prev.get("map50_95"),
+        })
+
+    result = {"entries": merged}
+    BENCHMARK_FILE.write_text(json.dumps(result, indent=2))
+    return result

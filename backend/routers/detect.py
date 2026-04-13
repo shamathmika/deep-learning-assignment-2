@@ -1,4 +1,3 @@
-import base64
 import time
 import tempfile
 import os
@@ -21,9 +20,6 @@ DEVICE_MAP = {
     "openvino":    "cpu",
     "coreml":      "cpu",
 }
-
-# Number of evenly-spaced frames returned as annotated images in the video response
-SAMPLE_FRAME_COUNT = 9
 
 
 def run_timed_inference(model, image_path: str, device: str) -> tuple[list, float]:
@@ -118,6 +114,7 @@ async def detect_video(
         if not cap.isOpened():
             raise HTTPException(status_code=400, detail="Could not open video file.")
 
+        fps       = cap.get(cv2.CAP_PROP_FPS) or 30.0
         frame_results = []
         latencies     = []
         frame_idx     = 0
@@ -168,30 +165,6 @@ async def detect_video(
 
         cap.release()
 
-        # Select up to SAMPLE_FRAME_COUNT evenly-spaced frames and encode them as
-        # base64 JPEG so the frontend can render bounding boxes on actual video frames.
-        sample_frames = []
-        if frame_results:
-            n = min(SAMPLE_FRAME_COUNT, len(frame_results))
-            step = max(1, (len(frame_results) - 1) // (n - 1)) if n > 1 else 1
-            sampled = [frame_results[i * step] for i in range(n)]
-
-            cap2 = cv2.VideoCapture(tmp_path)
-            for fr in sampled:
-                cap2.set(cv2.CAP_PROP_POS_FRAMES, fr["frame_index"])
-                ret, frame = cap2.read()
-                if not ret:
-                    continue
-                _, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
-                b64 = base64.b64encode(buf.tobytes()).decode()
-                sample_frames.append({
-                    "frame_index": fr["frame_index"],
-                    "image_b64":   f"data:image/jpeg;base64,{b64}",
-                    "detections":  fr["detections"],
-                    "latency_ms":  fr["latency_ms"],
-                })
-            cap2.release()
-
     finally:
         os.unlink(tmp_path)
 
@@ -200,9 +173,9 @@ async def detect_video(
     return JSONResponse({
         "model":            model_name,
         "backend":          backend,
+        "fps":              round(fps, 2),
         "total_frames":     frame_idx,
         "processed_frames": len(frame_results),
         "avg_latency_ms":   avg_latency,
         "frame_results":    frame_results,
-        "sample_frames":    sample_frames,
     })
