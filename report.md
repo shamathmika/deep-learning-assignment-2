@@ -108,7 +108,7 @@ RT-DETR-L outperforms YOLOv8s at baseline (0.70 vs 0.50 mAP@50) but at 352ms vs 
 8. Recorded a street scene video with an iPhone and extracted 30 evenly-spaced frames using `scripts/extract_frames.py`.
 9. Annotated all 30 frames in Label Studio with bounding boxes across 13 object classes (car, truck, person, traffic light, train, fire hydrant, bus, umbrella, dog, parking meter, motorcycle, stop sign, potted plant). Screenshot of the annotation interface below.
 
-![Label Studio annotation](data/assignment_screenshots/Screenshot%202026-04-13%20at%204.09.59%20PM.png)
+![Label Studio annotation](data/assignment_screenshots/label-studio-annotation.png)
 
 10. Exported annotations as COCO JSON and placed at `data/annotations/instances.json`.
 11. Ran mAP evaluation via `scripts/run_map_eval.py`, which calls the detection API for each frame and model/backend combo and computes mAP@50 and mAP@50:95 using pycocotools COCOeval.

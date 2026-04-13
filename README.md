@@ -4,6 +4,9 @@ CMPE 258 Homework 2 | Shamathmika | SJSU Spring 2026
 
 Object detection inference pipeline comparing YOLOv8s and RT-DETR-L across five acceleration backends. Includes a FastAPI backend, Next.js frontend for live video/image detection, and a benchmark dashboard with mAP evaluation.
 
+Full writeup, analysis, and findings: [report.md](report.md)  
+Screen recording demo: [data/recordings/demo.mp4](data/recordings/demo.mp4)
+
 ## Models
 
 | Model | Architecture |
