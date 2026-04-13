@@ -1,0 +1,34 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Model weights
+*.pt
+*.onnx
+*.torchscript
+*.xml
+*.bin
+
+# Data
+data/raw_frames/
+data/annotations/
+
+# Environment
+.env
+
+# macOS
+.DS_Store
+
+# Node
+frontend/node_modules/
+frontend/.next/
+
+# Temp files
+*.tmp
