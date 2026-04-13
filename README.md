@@ -42,7 +42,7 @@ Screen recording demo: [demo.mov](https://drive.google.com/open?id=1TwKo8R2DD-xl
 | OpenVINO | 70.9 | 4.97x | 0.00* |
 | ONNX + CoreML EP | 76.5 | 4.61x | 0.60 |
 
-*RT-DETR TorchScript/OpenVINO exports produce out-of-range class IDs from the traced decoder argmax. See report.md for details.
+*RT-DETR TorchScript/OpenVINO exports produce out-of-range class IDs from the traced decoder argmax. See [report.md](report.md) for details.
 
 ## Requirements
 
