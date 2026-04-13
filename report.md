@@ -96,7 +96,24 @@ RT-DETR-L outperforms YOLOv8s at baseline (0.70 vs 0.50 mAP@50) but at 352ms vs 
 5. All backends preserve YOLOv8s accuracy. No accuracy cost for accelerating the CNN model.
 6. ONNX RT-DETR requires custom postprocessing. The exported tensor layout differs from Ultralytics eager output and needs manual letterbox reversal.
 
-## 8. Acceleration Methods Summary
+## 8. Steps Done
+
+1. Set up FastAPI backend with Uvicorn and a Next.js frontend.
+2. Downloaded YOLOv8s and RT-DETR-L weights via Ultralytics.
+3. Exported both models to TorchScript, OpenVINO IR, and ONNX formats using `scripts/export_models.py`.
+4. Implemented the ONNX + CoreML EP backend with custom letterbox preprocessing and separate postprocessing branches for YOLOv8 (transposed anchor grid) and RT-DETR (normalized center-format boxes).
+5. Built the detection endpoints (`/detect/image`, `/detect/video`) and a benchmark endpoint that stores latency and mAP results.
+6. Built the frontend with a video detection player (canvas overlay synced to playback), image detection view, and a benchmark dashboard with live latency measurement.
+7. Ran latency benchmarks across all 10 model/backend combinations using the Run All button in the dashboard.
+8. Recorded a street scene video with an iPhone and extracted 30 evenly-spaced frames using `scripts/extract_frames.py`.
+9. Annotated all 30 frames in Label Studio with bounding boxes across 13 object classes (car, truck, person, traffic light, train, fire hydrant, bus, umbrella, dog, parking meter, motorcycle, stop sign, potted plant). Screenshot of the annotation interface below.
+
+![Label Studio annotation](data/assignment_screenshots/Screenshot%202026-04-13%20at%204.09.59%20PM.png)
+
+10. Exported annotations as COCO JSON and placed at `data/annotations/instances.json`.
+11. Ran mAP evaluation via `scripts/run_map_eval.py`, which calls the detection API for each frame and model/backend combo and computes mAP@50 and mAP@50:95 using pycocotools COCOeval.
+
+## 9. Acceleration Methods Summary
 
 | Method | Type | Status |
 |---|---|---|
