@@ -33,3 +33,6 @@ frontend/.next/
 
 # Temp files
 *.tmp
+
+# HEIC screenshots (converted to PNG)
+*.heic

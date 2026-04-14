@@ -45,7 +45,12 @@ No CUDA or NVIDIA hardware is available. All acceleration is CPU or Apple Neural
 4. Implemented the ONNX + CoreML EP backend with custom letterbox preprocessing and separate postprocessing branches for YOLOv8 (transposed anchor grid) and RT-DETR (normalized center-format boxes).
 5. Built the detection endpoints (`/detect/image`, `/detect/video`) and a benchmark endpoint that stores latency and mAP results.
 6. Built the frontend with a video detection player (canvas overlay synced to playback), image detection view, and a benchmark dashboard with live latency measurement.
+
+![Frontend video detection UI](data/assignment_screenshots/frontend-video-detection.png)
+
 7. Ran latency benchmarks across all 10 model/backend combinations using the Run All button in the dashboard.
+
+![Benchmark latency results](data/assignment_screenshots/benchmark-latency.png)
 8. Recorded a street scene video with an iPhone and extracted 30 evenly-spaced frames using `scripts/extract_frames.py`.
 9. Annotated all 30 frames in Label Studio with bounding boxes across 13 object classes (car, truck, person, traffic light, train, fire hydrant, bus, umbrella, dog, parking meter, motorcycle, stop sign, potted plant). Screenshot of the annotation interface below.
 
@@ -53,6 +58,8 @@ No CUDA or NVIDIA hardware is available. All acceleration is CPU or Apple Neural
 
 10. Exported annotations as COCO JSON and placed at `data/annotations/instances.json`.
 11. Ran mAP evaluation via `scripts/run_map_eval.py`, which calls the detection API for each frame and model/backend combo and computes mAP@50 and mAP@50:95 using pycocotools COCOeval.
+
+![Benchmark mAP results](data/assignment_screenshots/benchmark-map.png)
 
 ## 6. Results
 
