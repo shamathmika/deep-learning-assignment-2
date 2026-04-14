@@ -1,8 +1,7 @@
 # CMPE 258 Homework 2: Inference Optimization
 FNU Shamathmika | 018326464
 
-## Demo
-[demo.mov](https://drive.google.com/open?id=1TwKo8R2DD-xlndZ5QuyUEkqpBQJJx0gE&usp=drive_fs)
+### Demo can be found at: [demo.mov](https://drive.google.com/open?id=1TwKo8R2DD-xlndZ5QuyUEkqpBQJJx0gE&usp=drive_fs)
 
 ## 1. Overview
 
